@@ -66,7 +66,7 @@ arithmatics = foldr1 (<|>) ops
 argList :: Parser ArgList
 argList = do
   reserved "List"
-  lis <- many1 expr
+  lis <- many expr
   endReturn lis
 
 expr :: Parser Expr
@@ -144,7 +144,7 @@ paraList = do
   endReturn vars
 
 varList :: Parser [Var]
-varList = many1 parseVar
+varList = many parseVar
 
 toStage :: Either ParseError a -> Stage a
 toStage (Right a) = Right a
