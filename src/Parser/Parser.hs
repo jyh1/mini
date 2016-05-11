@@ -1,11 +1,16 @@
-module Parser.Parser where
+module Parser.Parser
+  (parseFile, getAST, parseProgram, parseExpr)
+where
 
 import Data.DataType
 import Parser.Lexer
+import Parser.Rename
 
 import Text.Parsec
 import Text.Parsec.String (Parser)
 import Text.Parsec.Pos
+
+import Control.Monad.Except
 
 import qualified Text.Parsec.Expr as Ex
 import qualified Text.Parsec.Token as Tok
@@ -141,5 +146,17 @@ paraList = do
 varList :: Parser [Var]
 varList = many1 parseVar
 
-parseProgram :: String -> Either ParseError Program
-parseProgram  = parse program "mini parser"
+toStage :: Either ParseError a -> Stage a
+toStage (Right a) = Right a
+toStage (Left err) = throwError (Parser err)
+
+parseProgram :: String -> String -> Either ParseError Program
+parseProgram  = parse program
+
+getAST :: String -> String -> Stage Program
+getAST name = (>>=  runRename) . toStage . parseProgram name
+
+parseFile :: FilePath -> IO (Stage Program)
+parseFile file = do
+  pro <- readFile file
+  return $ getAST file pro

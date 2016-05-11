@@ -36,13 +36,17 @@ data Command = Decl [Var]
   | Read Var
   | Print Expr
     deriving (Show, Eq)
+
 type Program = [Command]
 
 
 data Error = Parser ParseError
   | NotInScope String SourcePos
   | NameCollition String SourcePos
-    deriving (Show)
 
+instance Show Error where
+  show (Parser err) =show err
+  show (NotInScope x pos) = concat ["Varaible: ", x, " is not in scope! ", show pos]
+  show (NameCollition x pos) = concat ["Name collition: ", x, "! ", show pos]
 
 type Stage = Either Error
