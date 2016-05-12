@@ -22,7 +22,7 @@ library
 
                             , Data.DataType
 
-                            -- , Eval.Eval
+                            , Eval.Eval
   build-depends:       base >= 4.7 && < 5
                             , parsec
                             , hspec

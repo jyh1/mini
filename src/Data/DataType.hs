@@ -18,6 +18,8 @@ data LitVar = Var String SourcePos
 instance Show LitVar where
   show (Var x _) = x
 
+unpackLit (Slot n) = n
+
 newtype IntVar = Slot Int
   deriving(Eq)
 
@@ -65,12 +67,22 @@ data Error = Parser ParseError
   | NotInScope String SourcePos
   | NameCollition String SourcePos
   | ExpectedInt Result
+  | ExpectedFunction Result
+  | EOF
+  | ReadError
+  |PrintError
+  | FunError
 
 instance Show Error where
   show (Parser err) =show err
   show (NotInScope x pos) = concat ["Varaible: ", x, " is not in scope! ", show pos]
   show (NameCollition x pos) = concat ["Name collition: ", x, "! ", show pos]
   show (ExpectedInt _) = "Int is expected!"
+  show (ExpectedFunction _) = "Function is expected!"
+  show EOF = "Unexpected eof!"
+  show ReadError = "Expected an int as input!"
+  show PrintError = "Unprintable object!"
+  show FunError = "Function is applied to too few or too many arguments!"
 
 type Stage = Either Error
 
