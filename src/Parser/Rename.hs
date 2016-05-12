@@ -1,5 +1,7 @@
 {-#LANGUAGE TemplateHaskell #-}
-module Parser.Rename(runRename) where
+module Parser.Rename
+  (runRename)
+where
 
 import Data.DataType
 
@@ -14,16 +16,14 @@ data Buffer = Buffer { _counter :: Int
   , _current :: M.Map String Int
 }
 
+
 makeLenses '' Buffer
 
 initialBuffer = Buffer 0 M.empty M.empty
 
 type Rename = StateT Buffer Stage
 
-throw :: Error -> Rename a
-throw = lift . throwError
-
-declVar :: Var -> Rename Var
+declVar :: LitVar  -> Rename IntVar
 declVar (Var x pos) = do
   test <- uses current (M.member x)
   if test
@@ -34,7 +34,7 @@ declVar (Var x pos) = do
       current %=  M.insert x now
       return (Slot now)
 
-useVar :: Var -> Rename Var
+useVar :: LitVar -> Rename IntVar
 useVar (Var x pos) = do
   cur  <- use current
   upp <- use upper
@@ -59,7 +59,7 @@ descend = do
   upper %= M.union cur
   current .= M.empty
 
-renameExpr :: Expr -> Rename Expr
+renameExpr :: LitExpr -> Rename RenamedExpr
 renameExpr (Id var) = fmap Id (useVar var)
 renameExpr (AppFun fun args) = do
   newf <- useVar fun
@@ -69,7 +69,7 @@ renameExpr (Plus e1 e2) = renameTwo Plus e1 e2
 renameExpr (Minus e1 e2) = renameTwo Minus e1 e2
 renameExpr (Mult e1 e2) = renameTwo Mult e1 e2
 renameExpr (Div e1 e2) = renameTwo Div e1 e2
-renameExpr num = return num
+renameExpr (Num n) = return (Num n)
 
 
 renameTwo f e1 e2 = do
@@ -77,7 +77,7 @@ renameTwo f e1 e2 = do
   newE2 <- renameExpr e2
   return (f newE1 newE2)
 
-renameCommand :: Command -> Rename Command
+renameCommand :: LitCommand -> Rename RenamedCommand
 renameCommand (Decl vars) =  fmap Decl (mapM declVar vars)
 renameCommand (Value ex) = fmap Value (renameExpr ex)
 renameCommand (Func f paras pro) = do
@@ -99,8 +99,8 @@ renameCommand (Return ex) = fmap Return (renameExpr ex)
 renameCommand (Read var) = fmap Read (useVar var)
 renameCommand (Print ex) = fmap Print (renameExpr ex)
 
-renameProgram :: Program -> Rename Program
+renameProgram ::LitProgram -> Rename RenamedProgram
 renameProgram = mapM renameCommand
 
-runRename :: Program -> Stage Program
+runRename :: LitProgram -> Stage RenamedProgram
 runRename pro = evalStateT (renameProgram pro) initialBuffer

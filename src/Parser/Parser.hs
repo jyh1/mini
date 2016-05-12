@@ -22,7 +22,7 @@ import qualified Text.Parsec.Token as Tok
 --         ,[binary "+" Plus Ex.AssocLeft,
 --           binary "-" Minus Ex.AssocLeft]]
 
-parseVar :: Parser Var
+parseVar :: Parser LitVar
 parseVar = do
   name <- identifier
   pos <- getPosition
@@ -32,27 +32,27 @@ end = reserved "End"
 endWith n = end  >> n
 endReturn n = endWith (return n)
 
-num :: Parser Expr
+num :: Parser LitExpr
 num = do
   reserved "Num"
   n <- integer
   endReturn (Num n)
 
-var :: Parser Expr
+var :: Parser LitExpr
 var = do
   reserved "Id"
   name <- parseVar
   endReturn (Id name)
 
-appFun :: Parser Expr
+appFun :: Parser LitExpr
 appFun = do
   reserved "AppFun"
   name <- parseVar
   args  <- argList
   endReturn (AppFun name args)
 
-arithmatic :: String ->  (Expr -> Expr -> Expr)
-   -> Parser Expr
+arithmatic :: String ->  (LitExpr -> LitExpr -> LitExpr)
+   -> Parser LitExpr
 arithmatic name cons = do
   reserved name
   e1 <- expr
@@ -63,31 +63,31 @@ arithmatics = foldr1 (<|>) ops
   where ops = zipWith arithmatic ["Plus", "Minus", "Mult"]
                                         [Plus, Minus, Mult]
 
-argList :: Parser ArgList
+argList :: Parser (ArgList LitVar)
 argList = do
   reserved "List"
   lis <- many expr
   endReturn lis
 
-expr :: Parser Expr
+expr :: Parser LitExpr
 expr = num
   <|> var
   <|> appFun
   <|> arithmatics
 
-parseExpr :: String -> Either ParseError Expr
+parseExpr :: String -> Either ParseError (Expr LitVar)
 parseExpr  = parse expr "miniInterpreter"
 
-decl :: Parser Command
+decl :: Parser LitCommand
 decl = do
   reserved "Decl"
   vars <- varList
   endReturn (Decl vars)
 
-value :: Parser Command
+value :: Parser LitCommand
 value = fmap Value expr
 
-func :: Parser Command
+func :: Parser LitCommand
 func = do
   reserved "Func"
   name <- parseVar
@@ -95,22 +95,22 @@ func = do
   pros <- program
   endReturn (Func name paras pros)
 
-letBe :: Parser Command
+letBe :: Parser LitCommand
 letBe = do
   reserved "LetBe"
   var <- parseVar
   ex <- expr
   endReturn (LetBe var ex)
 
-runFun :: Parser Command
+runFun :: Parser LitCommand
 runFun = do
   reserved "RunFun"
   name <- parseVar
   args <- argList
   endReturn (RunFun name args)
 
-simple :: (String, Expr -> Command)
-   -> Parser Command
+simple :: (String, LitExpr -> LitCommand)
+   -> Parser LitCommand
 simple (name, f) = do
   reserved name
   ex <- expr
@@ -120,43 +120,43 @@ returnPrint = foldr1 (<|>) (map simple
                                                 [("Return", Return),
                                                  ("Print", Print)]  )
 
-rea :: Parser Command
+rea :: Parser LitCommand
 rea  = do
   reserved "Read"
   name <- parseVar
   endReturn (Read name)
 
 
-command :: Parser Command
+command :: Parser LitCommand
 command = foldr1 (<|>)
   [decl, value, func, letBe, runFun, returnPrint, rea]
 
-program :: Parser Program
+program :: Parser LitProgram
 program = do
   reserved "Pro"
   cs <- many command
   endReturn cs
 
-paraList :: Parser ParaList
+paraList :: Parser (ParaList LitVar)
 paraList = do
   reserved "Para"
   vars <- varList
   endReturn vars
 
-varList :: Parser [Var]
+varList :: Parser [LitVar]
 varList = many parseVar
 
 toStage :: Either ParseError a -> Stage a
 toStage (Right a) = Right a
 toStage (Left err) = throwError (Parser err)
 
-parseProgram :: String -> String -> Either ParseError Program
+parseProgram :: String -> String -> Either ParseError LitProgram
 parseProgram  = parse program
 
-getAST :: String -> String -> Stage Program
+getAST :: String -> String -> Stage RenamedProgram
 getAST name = (>>=  runRename) . toStage . parseProgram name
 
-parseFile :: FilePath -> IO (Stage Program)
+parseFile :: FilePath -> IO (Stage RenamedProgram)
 parseFile file = do
   pro <- readFile file
   return $ getAST file pro
