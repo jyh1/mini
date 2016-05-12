@@ -75,8 +75,8 @@ data Error = Parser ParseError
 
 instance Show Error where
   show (Parser err) =show err
-  show (NotInScope x pos) = concat ["Varaible: ", x, " is not in scope! ", show pos]
-  show (NameCollition x pos) = concat ["Name collition: ", x, "! ", show pos]
+  show (NotInScope x pos) = concat ["Varaible ", x, " is not in scope! ", show pos]
+  show (NameCollition x pos) = concat ["Name collision: ", x, "! ", show pos]
   show (ExpectedInt _) = "Int is expected!"
   show (ExpectedFunction _) = "Function is expected!"
   show EOF = "Unexpected eof!"
