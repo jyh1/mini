@@ -60,7 +60,7 @@ stack build
   ```
 
 4. Closure
-```
+  ```
   Program:
     Pro
       Func f Para n End
@@ -89,4 +89,4 @@ stack build
   Output:
     2
     5
-```
+  ```
