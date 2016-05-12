@@ -1,5 +1,5 @@
 module Parser.Parser
-  (parseFile, getAST, parseProgram, parseExpr)
+  (getAST, parseProgram, parseExpr)
 where
 
 import Data.DataType
@@ -15,18 +15,18 @@ import Control.Monad.Except
 import qualified Text.Parsec.Expr as Ex
 import qualified Text.Parsec.Token as Tok
 
--- binary s f  = Ex.Infix (reservedOp s >> return f )
---
--- table = [[binary "*" Mult Ex.AssocLeft,
---           binary "/" Div Ex.AssocLeft]
---         ,[binary "+" Plus Ex.AssocLeft,
---           binary "-" Minus Ex.AssocLeft]]
 
 parseVar :: Parser LitVar
 parseVar = do
-  name <- identifier
   pos <- getPosition
+  name <- funVar <|> identifier
   return (Var name pos)
+
+funVar :: Parser String
+funVar = do
+  reserved "FunName"
+  name <- identifier
+  endReturn name
 
 end = reserved "End"
 endWith n = end  >> n
@@ -137,6 +137,7 @@ program = do
   cs <- many command
   endReturn cs
 
+
 paraList :: Parser (ParaList LitVar)
 paraList = do
   reserved "Para"
@@ -155,8 +156,3 @@ parseProgram  = parse program
 
 getAST :: String -> String -> Stage RenamedProgram
 getAST name = (>>=  runRename) . toStage . parseProgram name
-
-parseFile :: FilePath -> IO (Stage RenamedProgram)
-parseFile file = do
-  pro <- readFile file
-  return $ getAST file pro
