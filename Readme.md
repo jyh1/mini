@@ -29,13 +29,13 @@ stack build
   ErrorMessage2:
     Variable x is not in scope! "program.txt" (line 1, column 14)
 
-    Program3:
-      Pro
-        Decl x End
-        Print Id x End End
-      End
-    ErrorMessage3:
-      Unprintable object!
+  Program3:
+    Pro
+      Decl x End
+      Print Id x End End
+    End
+  ErrorMessage3:
+    Unprintable object!
   ```
 3. First citizen function, making the use of keyword `FunName` obsolete
   ```
@@ -61,31 +61,32 @@ stack build
 
 4. Closure
 ```
-  Pro
-    Func f Para n End
-      Pro
-        Decl x End
-        LetBe x Id n End End
-        Func g Para m End
-          Pro
-            LetBe x
-              Plus Id x End Id m End End
+  Program:
+    Pro
+      Func f Para n End
+        Pro
+          Decl x End
+          LetBe x Id n End End
+          Func g Para m End
+            Pro
+              LetBe x
+                Plus Id x End Id m End End
+              End
+              Print Id x End End
             End
-            Print Id x End End
           End
+          Return Id g End End
         End
-        Return Id g End End
       End
-    End
 
-    Decl add End
-    LetBe add
-      AppFun f List Num 0 End End End
+      Decl add End
+      LetBe add
+        AppFun f List Num 0 End End End
+      End
+      AppFun add List Num 2 End End End
+      AppFun add List Num 3 End End End
     End
-    AppFun add List Num 2 End End End
-    AppFun add List Num 3 End End End
-  End
-Output:
-  2
-  5
+  Output:
+    2
+    5
 ```
