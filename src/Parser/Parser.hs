@@ -19,14 +19,20 @@ import qualified Text.Parsec.Token as Tok
 parseVar :: Parser LitVar
 parseVar = do
   pos <- getPosition
-  name <- funVar <|> identifier
+  name <- funPara <|> identifier
   return (Var name pos)
 
-funVar :: Parser String
-funVar = do
+funPara :: Parser String
+funPara = do
   reserved "FunName"
   name <- identifier
   endReturn name
+
+funExpr :: Parser LitExpr
+funExpr = do
+  pos <- getPosition
+  name <- funPara
+  return (Id (Var name pos))
 
 end = reserved "End"
 endWith n = end  >> n
@@ -66,7 +72,7 @@ arithmatics = foldr1 (<|>) ops
 argList :: Parser (ArgList LitVar)
 argList = do
   reserved "List"
-  lis <- many expr
+  lis <- many (expr <|> funExpr)
   endReturn lis
 
 expr :: Parser LitExpr
