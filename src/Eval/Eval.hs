@@ -23,10 +23,10 @@ type EvalState = StateT Env Stage
 type EvalResult = EvalState Result
 
 evalVar :: IntVar -> EvalResult
-evalVar (Slot n) = uses varTable (fromJust . I.lookup n)
+evalVar (Slot n _ _) = uses varTable (fromJust . I.lookup n)
 
 setVar :: IntVar -> Result -> EvalState ()
-setVar (Slot n) res = varTable %= I.insert n res
+setVar (Slot n _ _) res = varTable %= I.insert n res
 
 declareVar :: IntVar -> EvalState ()
 declareVar v = setVar v None

@@ -32,7 +32,7 @@ declVar (Var x pos) = do
       now <- use counter
       counter += 1
       current %=  M.insert x now
-      return (Slot now)
+      return (Slot now x pos)
 
 useVar :: LitVar -> Rename IntVar
 useVar (Var x pos) = do
@@ -40,8 +40,8 @@ useVar (Var x pos) = do
   upp <- use upper
   let find = M.lookup x
   case (find cur, find upp) of
-    (Just a, _) -> return (Slot a)
-    (Nothing, Just a) -> return (Slot a)
+    (Just a, _) -> return (Slot a x pos)
+    (Nothing, Just a) -> return (Slot a x pos)
     _ -> throw (NotInScope x pos)
 
 -- | restore state after exec the action

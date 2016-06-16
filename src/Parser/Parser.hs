@@ -154,7 +154,7 @@ varList :: Parser [LitVar]
 varList = many parseVar
 
 toStage :: Either ParseError a -> Stage a
-toStage (Right a) = Right a
+toStage (Right a) = return a
 toStage (Left err) = throwError (Parser err)
 
 parseProgram :: String -> String -> Either ParseError LitProgram

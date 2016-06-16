@@ -1,4 +1,4 @@
-module Data.DataType where
+ module Data.DataType where
 
 import Text.Parsec.Pos
 import Control.Monad.Except
@@ -18,13 +18,13 @@ data LitVar = Var String SourcePos
 instance Show LitVar where
   show (Var x _) = x
 
-unpackLit (Slot n) = n
+unpackLit (Slot n _ _) = n
 
-newtype IntVar = Slot Int
+data IntVar = Slot Int String SourcePos
   deriving(Eq)
 
 instance Show IntVar where
-  show (Slot n) = "#" ++ show n
+  show (Slot _ s _) = s
 
 -- instance Show Var where
 --   show (Slot n) = "#" ++ show n
@@ -84,7 +84,7 @@ instance Show Error where
   show PrintError = "Unprintable object!"
   show FunError = "Function is applied to too few or too many arguments!"
 
-type Stage = Either Error
+type Stage = ExceptT Error IO
 
 type Record = I.IntMap Result
 
