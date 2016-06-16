@@ -29,15 +29,29 @@ setVar :: IntVar -> Result -> EvalState ()
 setVar (Slot n _ _) res = varTable %= I.insert n res
 
 declareVar :: IntVar -> EvalState ()
-declareVar v = setVar v None
+declareVar v = do
+  setVar v None
+  printDeclare v
 
-applyFun :: Result -> [Result] -> EvalResult
-applyFun (Lambda lis pro) argLis
+printDeclare v =  statePrint $ "Allocating memory for " ++ prettyShow v
+
+printReclaim v = statePrint $ "Reclaiming the memory of " ++ prettyShow v
+
+statePrint :: String -> EvalState ()
+statePrint s = (lift . lift) (putStrLn s)
+
+applyFun :: IntVar -> Result -> [Result] -> EvalResult
+applyFun f (Lambda lis pro clos) argLis
   | length lis /= length argLis = throw FunError
   | otherwise = do
+    statePrint ("Creating activation record for " ++ prettyShow f)
+    mapM_ printDeclare lis
     let nlis = map unpackLit lis
     varTable %= I.union (I.fromList (zip nlis argLis))
-    evalProgram pro
+    value <- evalProgram pro
+    statePrint ("Garbage collection of " ++ prettyShow f)
+    mapM_ printReclaim clos
+    return value
 
 evalExpr :: RenamedExpr -> EvalResult
 evalExpr (Num n) = return $ Int n
@@ -45,7 +59,7 @@ evalExpr (Id var) = evalVar var
 evalExpr (AppFun var paras) = do
   fun <- evalVar var
   rs <- mapM evalExpr paras
-  applyFun fun rs
+  applyFun var fun rs
 evalExpr (Plus e1 e2) = evalArith (+) e1 e2
 evalExpr (Minus e1 e2) = evalArith (-) e1 e2
 evalExpr (Mult e1 e2) = evalArith (*) e1 e2
@@ -70,7 +84,7 @@ evalToLambda :: RenamedExpr -> EvalResult
 evalToLambda e = do
   ne <- evalExpr e
   case ne of
-    Lambda _ _ -> return ne
+    Lambda {}-> return ne
     _ -> throw (ExpectedInt ne)
 
 noneRes = return None
@@ -78,7 +92,7 @@ noneRes = return None
 evalCommand :: RenamedCommand -> EvalResult
 evalCommand (Decl vs) = mapM_ declareVar vs >> noneRes
 evalCommand (Value expr) = evalExpr expr
-evalCommand (Func var pars pros) = setVar var (Lambda pars pros) >> noneRes
+evalCommand (Record var pars pros clos) = setVar var (Lambda pars pros clos) >> noneRes
 evalCommand (LetBe v e) = do
   ne <- evalExpr e
   setVar v ne
@@ -92,6 +106,7 @@ evalCommand (Read e) = readBuffer >>= setVar e >> noneRes
 evalCommand (Print expr) = do
   e <- evalExpr expr
   printBuffer e
+
 
 readBuffer :: EvalResult
 readBuffer = do

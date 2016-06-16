@@ -10,6 +10,7 @@ stack build
 ## Features:
 1. Extended mini language syntax
 2. Minimum error message
+3. GC (Memory management detail will be printed to standard output)
 
   ```
   Program1:

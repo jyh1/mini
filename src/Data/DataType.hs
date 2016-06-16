@@ -26,6 +26,9 @@ data IntVar = Slot Int String SourcePos
 instance Show IntVar where
   show (Slot _ s _) = s
 
+prettyShow :: IntVar -> String
+prettyShow (Slot _ n p) =  n ++ " at " ++ show p
+
 -- instance Show Var where
 --   show (Slot n) = "#" ++ show n
 --   show (Var n _) = n
@@ -50,6 +53,7 @@ data Command var = Decl [var]
   | Return (Expr var)
   | Read var
   | Print (Expr var)
+  | Record IntVar (ParaList IntVar) (Program IntVar) [IntVar]
     deriving (Show, Eq)
 
 type Program var = [Command var]
@@ -89,7 +93,7 @@ type Stage = ExceptT Error IO
 type Record = I.IntMap Result
 
 data Result = Int Integer
-  | Lambda (ParaList IntVar) RenamedProgram
+  | Lambda (ParaList IntVar) RenamedProgram [IntVar]
   | None
     deriving(Show)
 

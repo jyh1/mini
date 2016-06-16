@@ -14,12 +14,13 @@ import Control.Monad.Except
 data Buffer = Buffer { _counter :: Int
   , _upper :: M.Map String Int
   , _current :: M.Map String Int
+  , _vars :: [IntVar]
 }
 
 
 makeLenses '' Buffer
 
-initialBuffer = Buffer 0 M.empty M.empty
+initialBuffer = Buffer 0 M.empty M.empty []
 
 type Rename = StateT Buffer Stage
 
@@ -32,7 +33,9 @@ declVar (Var x pos) = do
       now <- use counter
       counter += 1
       current %=  M.insert x now
-      return (Slot now x pos)
+      let newV = Slot now x pos
+      vars %= (newV :)
+      return newV
 
 useVar :: LitVar -> Rename IntVar
 useVar (Var x pos) = do
@@ -58,6 +61,7 @@ descend = do
   cur <- use current
   upper %= M.union cur
   current .= M.empty
+  vars .= []
 
 renameExpr :: LitExpr -> Rename RenamedExpr
 renameExpr (Id var) = fmap Id (useVar var)
@@ -78,20 +82,21 @@ renameTwo f e1 e2 = do
   return (f newE1 newE2)
 
 renameCommand :: LitCommand -> Rename RenamedCommand
-renameCommand (Decl vars) =  fmap Decl (mapM declVar vars)
-renameCommand (Value ex) = fmap Value (renameExpr ex)
-renameCommand (Func f paras pro) = do
+renameCommand (Decl vars) =   fmap Decl (mapM declVar vars)
+renameCommand (Value ex) =  fmap Value (renameExpr ex)
+renameCommand (Func f paras pro) =  do
   newF <- declVar f
   restore $ do
     descend
     newParas <- mapM declVar paras
     newPro <- renameProgram pro
-    return (Func newF newParas newPro)
-renameCommand (LetBe var ex) = do
+    freed <- use vars
+    return $ Record newF newParas newPro freed
+renameCommand (LetBe var ex) =  do
   newVar <- useVar var
   newEx <- renameExpr ex
   return (LetBe newVar newEx)
-renameCommand (RunFun fun args) = do
+renameCommand (RunFun fun args) =  do
   newFun <- useVar fun
   newArgs <- mapM renameExpr args
   return (RunFun newFun newArgs)
